@@ -64,11 +64,13 @@ flutter pub add http geolocator url_launcher flutter_map latlong2
 
 | Package        | Versi   | Kegunaan                                                  |
 | -------------- | ------- | --------------------------------------------------------- |
-| `http`         | ^1.4.0  | Memanggil REST API backend                                |
+| `http`         | ^1.4.0  | Memanggil REST API backend & **OpenRouteService API**     |
 | `geolocator`   | ^13.0.2 | Mendapatkan posisi GPS pengguna                           |
 | `url_launcher` | ^6.3.1  | Membuka Google Maps eksternal untuk navigasi              |
 | `flutter_map`  | ^7.0.2  | Menampilkan peta OSM (OpenStreetMap) gratis tanpa API key |
 | `latlong2`     | ^0.9.1  | Tipe data LatLng untuk koordinat peta                     |
+
+> **Catatan:** ORS API key digunakan untuk menggambar rute dan menghitung jarak/durasi perjalanan. Daftar gratis di https://openrouteservice.org/dev/#/signup lalu masukkan key ke `lib/config.dart`.
 
 ### 3. Struktur folder
 
