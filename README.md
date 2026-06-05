@@ -150,10 +150,10 @@ Pilih browser (Chrome/Edge) untuk mode mobile simulator.
 │  - geolocator       │       │  - PostgreSQL                │
 │  - ORS API (rute)   │       │  - REST API /api/places      │
 └─────────────────────┘       └──────────────────────────────┘
-         │
-         ▼
+          │
+          ▼
   OpenRouteService API
-  (rute driving-car)
+  (rute foot-walking / driving-car)
 ```
 
 ## API Endpoints (Backend Railway)
@@ -170,10 +170,15 @@ Backend URL: `https://inspiring-gratitude-production-3d44.up.railway.app`
 
 - **Direktori tempat**: lihat RS, Klinik, Puskesmas dari database
 - **Peta OSM**: marker lokasi user + tempat tujuan
-- **Jarak GPS**: hitung jarak lurus (Haversine) dari user ke setiap tempat
-- **Rute navigasi**: gambar polyline rute via OpenRouteService + info jarak & durasi
-- **Google Maps intent**: buka Google Maps eksternal untuk navigasi real-time
-- **Travel mode**: pilih Mobil / Motor untuk rute
+- **Jarak GPS**: hitung jarak lurus (Haversine) dari posisi user ke setiap tempat (bukan dari kampus)
+- **Rute navigasi multi-transportasi**:
+  - **Jalan Kaki** (`foot-walking`) — jalur pedestrian di sekitar kampus
+  - **Motor** (`driving-car`) — rute via jalan raya
+  - **Mobil** (`driving-car`) — rute via jalan raya
+- **Full-screen map**: saat klik "Lihat Rute", peta membesar satu layar penuh dan detail tempat di-hide (seperti Google Maps)
+- **Zoom in/out**: tombol `+` / `-` serta pinch-to-zoom smooth (`minZoom: 3`, `maxZoom: 19`)
+- **Posisi real-time**: koordinat Latitude, Longitude user update live via `Geolocator.getPositionStream()` (setiap 5 meter)
+- **Route info overlay**: jarak & durasi tampil di kartu bawah saat full-screen map
 
 ## Tema Warna
 

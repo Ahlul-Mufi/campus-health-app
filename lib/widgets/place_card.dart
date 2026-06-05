@@ -92,6 +92,25 @@ class PlaceCard extends StatelessWidget {
                         ],
                       ),
                     ],
+                    if (place.openingHours != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.access_time,
+                              size: 16, color: const Color(0xFF96B6C5)),
+                          const SizedBox(width: 4),
+                          Text(
+                            place.openingHours!.trim() == '24 Jam'
+                                ? 'Buka 24 Jam'
+                                : place.openingHours!
+                                    .split('\n')
+                                    .first,
+                            style: const TextStyle(
+                                fontSize: 13, color: Color(0xFF555555)),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
