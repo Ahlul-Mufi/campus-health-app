@@ -30,7 +30,21 @@ class _MainShellState extends State<MainShell> {
       ),
       bottomNavigationBar: _HealthyBottomNav(
         currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
+        onTap: (i) {
+          if (i >= _screens.length) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Coming Soon',
+                    style: TextStyle(color: Color(0xFF1B1C17))),
+                backgroundColor: const Color(0xFFBDEFBE),
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+            return;
+          }
+          setState(() => _currentIndex = i);
+        },
       ),
     );
   }
@@ -57,10 +71,10 @@ class _HealthyBottomNav extends StatelessWidget {
     return Container(
       height: 80,
       decoration: BoxDecoration(
-        color: const Color(0xFFFBF9F1).withOpacity(0.95),
+        color: const Color(0xFFFBF9F1).withValues(alpha: 0.95),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),

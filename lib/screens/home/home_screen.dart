@@ -3,6 +3,7 @@ import '../../models/category.dart';
 import '../../models/place.dart';
 import '../../services/api_service.dart';
 import '../detail/detail_screen.dart';
+import '../list/list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -70,12 +71,21 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _openList(Category cat) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ListScreen(category: cat),
+      ),
+    );
+  }
+
   void _openDetail(Place place) {
     Navigator.push(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, anim, __) => DetailScreen(place: place),
-        transitionsBuilder: (_, anim, __, child) => SlideTransition(
+        pageBuilder: (_, anim, _) => DetailScreen(place: place),
+        transitionsBuilder: (_, anim, _, child) => SlideTransition(
           position: Tween<Offset>(
             begin: const Offset(0.3, 0),
             end: Offset.zero,
@@ -98,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverAppBar(
               floating: true,
               snap: true,
-              backgroundColor: const Color(0xFFFBF9F1).withOpacity(0.95),
+              backgroundColor: const Color(0xFFFBF9F1).withValues(alpha: 0.95),
               elevation: 0,
               scrolledUnderElevation: 1,
               title: Row(
@@ -181,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(999),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -247,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   icon: _iconForCategory(cat.name),
                                   bg: bg,
                                   fg: fg,
-                                  onTap: () {},
+                                  onTap: () => _openList(cat),
                                 ),
                               ),
                             );
@@ -300,8 +310,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemCount: 3,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                        itemBuilder: (_, __) => _FacilityCardSkeleton(),
+                        separatorBuilder: (_, _) => const SizedBox(width: 12),
+                        itemBuilder: (_, _) => _FacilityCardSkeleton(),
                       ),
                     );
                   }
@@ -326,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: filtered.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      separatorBuilder: (_, _) => const SizedBox(width: 12),
                       itemBuilder: (_, i) => _FacilityCard(
                         place: filtered[i],
                         onTap: () => _openDetail(filtered[i]),
@@ -425,7 +435,7 @@ class _CategoryChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -472,7 +482,7 @@ class _FacilityCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -496,7 +506,7 @@ class _FacilityCard extends StatelessWidget {
                     child: Icon(
                       Icons.local_hospital_rounded,
                       size: 56,
-                      color: const Color(0xFF0D631B).withOpacity(0.3),
+                      color: const Color(0xFF0D631B).withValues(alpha: 0.3),
                     ),
                   ),
                   if (place.rating != null)
@@ -509,7 +519,7 @@ class _FacilityCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.92),
+                          color: Colors.white.withValues(alpha: 0.92),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -597,7 +607,7 @@ class _RecommendedCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

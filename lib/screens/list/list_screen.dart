@@ -81,16 +81,12 @@ class _ListScreenState extends State<ListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F0E8),
+      backgroundColor: const Color(0xFFFBF9F1),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(60),
         child: Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF96B6C5), Color(0xFFADC4CE)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: Color(0xFF0D631B),
           ),
           child: AppBar(
             title: Text(
@@ -126,13 +122,13 @@ class _ListScreenState extends State<ListScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.cloud_off,
-                        size: 48, color: Color(0xFFADC4CE)),
+                        size: 48, color: Color(0xFFBDEFBE)),
                     const SizedBox(height: 16),
                     Text(
                       'Gagal memuat data',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        color: const Color(0xFF40493D),
                       ),
                     ),
                   ],
@@ -147,11 +143,11 @@ class _ListScreenState extends State<ListScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.search_off,
-                      size: 48, color: Colors.grey[400]),
+                      size: 48, color: const Color(0xFFBFCABA)),
                   const SizedBox(height: 16),
                   Text(
                     'Tidak ada tempat di kategori ini',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+                    style: TextStyle(fontSize: 16, color: const Color(0xFF40493D)),
                   ),
                 ],
               ),
