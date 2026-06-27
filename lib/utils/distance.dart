@@ -10,3 +10,8 @@ double haversine(double lat1, double lon1, double lat2, double lon2) {
 }
 
 double _toRad(double deg) => deg * pi / 180;
+
+String formatDistance(double km) {
+  if (km < 1) return '${(km * 1000).toStringAsFixed(0)} m';
+  return '${km.toStringAsFixed(1)} km';
+}
