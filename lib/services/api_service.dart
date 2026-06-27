@@ -5,7 +5,7 @@ import '../models/place.dart';
 
 class ApiService {
   static const String baseUrl =
-      'https://inspiring-gratitude-production-3d44.up.railway.app';
+      'https://campus-healt-api-production.up.railway.app';
 
   Future<List<Category>> getCategories() async {
     final response = await http.get(Uri.parse('$baseUrl/api/categories'));

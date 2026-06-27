@@ -56,7 +56,7 @@ class _DetailScreenState extends State<DetailScreen> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        setState(() => _isLoadingLocation = false);
+        if (mounted) setState(() => _isLoadingLocation = false);
         return;
       }
 
@@ -64,24 +64,25 @@ class _DetailScreenState extends State<DetailScreen> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          setState(() => _isLoadingLocation = false);
+          if (mounted) setState(() => _isLoadingLocation = false);
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        setState(() => _isLoadingLocation = false);
+        if (mounted) setState(() => _isLoadingLocation = false);
         return;
       }
 
       final position = await Geolocator.getCurrentPosition();
+      if (!mounted) return;
       setState(() {
         _currentPosition = position;
         _isLoadingLocation = false;
       });
       _startPositionStream();
     } catch (e) {
-      setState(() => _isLoadingLocation = false);
+      if (mounted) setState(() => _isLoadingLocation = false);
     }
   }
 
@@ -224,6 +225,7 @@ class _DetailScreenState extends State<DetailScreen> {
           'way_points': List<int>.from(s['way_points'] as List? ?? []),
         }).toList() ?? [];
 
+        if (!mounted) return;
         setState(() {
           _routePoints = points;
           _routeSteps = steps;
@@ -237,7 +239,7 @@ class _DetailScreenState extends State<DetailScreen> {
         throw Exception('ORS error: ${response.statusCode}');
       }
     } catch (e) {
-      setState(() => _isLoadingRoute = false);
+      if (mounted) setState(() => _isLoadingRoute = false);
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -900,6 +902,41 @@ class _DetailScreenState extends State<DetailScreen> {
                         fontSize: 15,
                         color: const Color(0xFF40493D),
                         height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+                if (widget.place.effectiveFotoUrl != null) ...[
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: Image.network(
+                        widget.place.effectiveFotoUrl!,
+                        fit: BoxFit.cover,
+                        height: 220,
+                        loadingBuilder: (_, child, progress) =>
+                            progress == null ? child : Container(
+                              height: 220,
+                              color: const Color(0xFFE8F5E9),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFF0D631B),
+                                ),
+                              ),
+                            ),
+                        errorBuilder: (_, _, _) => Container(
+                          height: 220,
+                          color: const Color(0xFFE8F5E9),
+                          child: const Center(
+                            child: Icon(
+                              Icons.local_hospital_rounded,
+                              size: 64,
+                              color: Color(0xFF0D631B),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),

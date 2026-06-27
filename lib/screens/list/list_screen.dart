@@ -9,9 +9,10 @@ import '../../widgets/shimmer_loading.dart';
 import '../detail/detail_screen.dart';
 
 class ListScreen extends StatefulWidget {
-  final Category category;
+  final Category? category;
+  final bool showAll;
 
-  const ListScreen({super.key, required this.category});
+  const ListScreen({super.key, this.category, this.showAll = false});
 
   @override
   State<ListScreen> createState() => _ListScreenState();
@@ -25,7 +26,9 @@ class _ListScreenState extends State<ListScreen> {
   @override
   void initState() {
     super.initState();
-    _places = _api.getPlaces(category: widget.category.name.toLowerCase());
+    _places = widget.showAll
+        ? _api.getPlaces()
+        : _api.getPlaces(category: widget.category!.name.toLowerCase());
     _getCurrentLocation();
   }
 
@@ -90,7 +93,7 @@ class _ListScreenState extends State<ListScreen> {
           ),
           child: AppBar(
             title: Text(
-              widget.category.name,
+              widget.showAll ? 'Semua Fasilitas' : widget.category!.name,
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             centerTitle: true,

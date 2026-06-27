@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/place.dart';
-import '../models/favorites_notifier.dart';
 import '../utils/app_theme.dart';
 
-class FacilityCard extends StatefulWidget {
+class FacilityCard extends StatelessWidget {
   final Place place;
   final double? distance;
   final VoidCallback onTap;
@@ -16,30 +15,9 @@ class FacilityCard extends StatefulWidget {
   });
 
   @override
-  State<FacilityCard> createState() => _FacilityCardState();
-}
-
-class _FacilityCardState extends State<FacilityCard> {
-  @override
-  void initState() {
-    super.initState();
-    favoritesNotifier.addListener(_rebuild);
-  }
-
-  @override
-  void dispose() {
-    favoritesNotifier.removeListener(_rebuild);
-    super.dispose();
-  }
-
-  void _rebuild() => setState(() {});
-
-  @override
   Widget build(BuildContext context) {
-    final isFav = favoritesNotifier.isFavorite(widget.place.id);
-
     return GestureDetector(
-      onTap: widget.onTap,
+      onTap: onTap,
       child: Container(
         width: 220,
         decoration: BoxDecoration(
@@ -57,25 +35,26 @@ class _FacilityCardState extends State<FacilityCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image placeholder / header
-            Container(
-              height: 110,
-              decoration: BoxDecoration(
-                color: AppColors.secondaryContainer.withValues(alpha: 0.6),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
+            // Image
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               child: Stack(
                 children: [
-                  Center(
-                    child: Icon(
-                      _iconFor(widget.place.categoryName),
-                      size: 48,
-                      color: AppColors.primary.withValues(alpha: 0.35),
-                    ),
+                  SizedBox(
+                    height: 110,
+                    width: double.infinity,
+                    child: place.effectiveFotoUrl != null
+                        ? Image.network(
+                            place.effectiveFotoUrl!,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (_, child, progress) =>
+                                progress == null ? child : _imagePlaceholder(),
+                            errorBuilder: (_, _, _) => _imagePlaceholder(),
+                          )
+                        : _imagePlaceholder(),
                   ),
                   // Rating badge
-                  if (widget.place.rating != null)
+                  if (place.rating != null)
                     Positioned(
                       top: 10,
                       right: 10,
@@ -99,7 +78,7 @@ class _FacilityCardState extends State<FacilityCard> {
                                 size: 13, color: Colors.amber),
                             const SizedBox(width: 3),
                             Text(
-                              widget.place.rating!.toStringAsFixed(1),
+                              place.rating!.toStringAsFixed(1),
                               style: AppTextStyles.labelMedium.copyWith(
                                 color: AppColors.onSurface,
                               ),
@@ -108,27 +87,6 @@ class _FacilityCardState extends State<FacilityCard> {
                         ),
                       ),
                     ),
-                  // Favorite button
-                  Positioned(
-                    top: 8,
-                    left: 10,
-                    child: GestureDetector(
-                      onTap: () =>
-                          favoritesNotifier.toggleFavorite(widget.place),
-                      child: Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          isFav ? Icons.favorite : Icons.favorite_outline,
-                          size: 15,
-                          color: isFav ? AppColors.error : AppColors.outline,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -138,7 +96,7 @@ class _FacilityCardState extends State<FacilityCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.place.name,
+                    place.name,
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.w600,
                       color: AppColors.onSurface,
@@ -154,9 +112,9 @@ class _FacilityCardState extends State<FacilityCard> {
                       const SizedBox(width: 3),
                       Expanded(
                         child: Text(
-                          widget.distance != null
-                              ? '${widget.distance! < 1 ? '${(widget.distance! * 1000).toStringAsFixed(0)} m' : '${widget.distance!.toStringAsFixed(1)} km'} • ${widget.place.categoryName ?? ''}'
-                              : widget.place.categoryName ?? '',
+                          distance != null
+                              ? '${distance! < 1 ? '${(distance! * 1000).toStringAsFixed(0)} m' : '${distance!.toStringAsFixed(1)} km'} • ${place.categoryName ?? ''}'
+                              : place.categoryName ?? '',
                           style: AppTextStyles.labelMedium.copyWith(
                               color: AppColors.onSurfaceVariant),
                           overflow: TextOverflow.ellipsis,
@@ -168,6 +126,22 @@ class _FacilityCardState extends State<FacilityCard> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _imagePlaceholder() {
+    return Container(
+      height: 110,
+      decoration: BoxDecoration(
+        color: AppColors.secondaryContainer.withValues(alpha: 0.6),
+      ),
+      child: Center(
+        child: Icon(
+          _iconFor(place.categoryName),
+          size: 48,
+          color: AppColors.primary.withValues(alpha: 0.35),
         ),
       ),
     );

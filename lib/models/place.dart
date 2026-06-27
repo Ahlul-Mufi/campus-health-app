@@ -11,6 +11,9 @@ class Place {
   final String? googleMapsUrl;
   final String? categoryName;
   final String? openingHours;
+  final String? foto;
+
+  String? get effectiveFotoUrl => foto;
 
   Place({
     required this.id,
@@ -25,6 +28,7 @@ class Place {
     this.googleMapsUrl,
     this.categoryName,
     this.openingHours,
+    this.foto,
   });
 
   factory Place.fromJson(Map<String, dynamic> json) {
@@ -47,6 +51,7 @@ class Place {
       googleMapsUrl: json['google_maps_url'],
       categoryName: json['category_name'],
       openingHours: json['opening_hours'],
+      foto: json['foto'],
     );
   }
 }

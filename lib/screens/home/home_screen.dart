@@ -164,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     // Greeting
                     const Text(
-                      'Hello, Student!',
+                      'Halo, Mahasiswa!',
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w700,
@@ -173,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Find the nearest healthcare facility today.',
+                      'Temukan fasilitas kesehatan terdekat hari ini.',
                       style: TextStyle(
                         fontSize: 14,
                         color: Color(0xFF40493D),
@@ -205,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: Color(0xFF1B1C17),
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Search facilities, doctors...',
+                          hintText: 'Cari fasilitas, dokter...',
                           hintStyle: const TextStyle(
                             color: Color(0xFF40493D),
                             fontSize: 15,
@@ -272,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Nearby Facilities',
+                          'Fasilitas Terdekat',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -280,9 +280,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ListScreen(showAll: true),
+                              ),
+                            );
+                          },
                           child: const Text(
-                            'See All',
+                            'Lihat Semua',
                             style: TextStyle(
                               color: Color(0xFF0D631B),
                               fontWeight: FontWeight.w500,
@@ -318,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (snap.hasError || snap.data == null || snap.data!.isEmpty) {
                     return const Padding(
                       padding: EdgeInsets.all(16),
-                      child: Text('No facilities found'),
+                      child: Text('Tidak ada fasilitas ditemukan'),
                     );
                   }
                   final places = snap.data!;
@@ -355,7 +362,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Recommended for You',
+                      'Rekomendasi untuk Anda',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -471,6 +478,42 @@ class _FacilityCard extends StatelessWidget {
 
   const _FacilityCard({required this.place, required this.onTap});
 
+  Widget _buildIconFallback() {
+    return Center(
+      child: Icon(
+        Icons.local_hospital_rounded,
+        size: 56,
+        color: const Color(0xFF0D631B).withValues(alpha: 0.3),
+      ),
+    );
+  }
+
+  Widget _buildRatingBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star_rounded,
+              color: Color(0xFFF59E0B), size: 14),
+          const SizedBox(width: 2),
+          Text(
+            place.rating!.toStringAsFixed(1),
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1B1C17),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -500,48 +543,42 @@ class _FacilityCard extends StatelessWidget {
                   top: Radius.circular(20),
                 ),
               ),
-              child: Stack(
-                children: [
-                  Center(
-                    child: Icon(
-                      Icons.local_hospital_rounded,
-                      size: 56,
-                      color: const Color(0xFF0D631B).withValues(alpha: 0.3),
+              clipBehavior: Clip.antiAlias,
+              child: place.effectiveFotoUrl != null
+                  ? Stack(
+                      children: [
+                        Image.network(
+                          place.effectiveFotoUrl!,
+                          width: double.infinity,
+                          height: 140,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => _buildIconFallback(),
+                        ),
+                        if (place.rating != null)
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: _buildRatingBadge(),
+                          ),
+                      ],
+                    )
+                  : Stack(
+                      children: [
+                        Center(
+                          child: Icon(
+                            Icons.local_hospital_rounded,
+                            size: 56,
+                            color: const Color(0xFF0D631B).withValues(alpha: 0.3),
+                          ),
+                        ),
+                        if (place.rating != null)
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: _buildRatingBadge(),
+                          ),
+                      ],
                     ),
-                  ),
-                  if (place.rating != null)
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.92),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.star_rounded,
-                                color: Color(0xFFF59E0B), size: 14),
-                            const SizedBox(width: 2),
-                            Text(
-                              place.rating!.toStringAsFixed(1),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1B1C17),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
             ),
             Padding(
               padding: const EdgeInsets.all(12),
@@ -622,10 +659,22 @@ class _RecommendedCard extends StatelessWidget {
                 color: const Color(0xFFBDEFBE),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Center(
-                child: Icon(Icons.local_hospital_rounded,
-                    color: Color(0xFF0D631B), size: 36),
-              ),
+              clipBehavior: Clip.antiAlias,
+              child: place.effectiveFotoUrl != null
+                  ? Image.network(
+                      place.effectiveFotoUrl!,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const Center(
+                        child: Icon(Icons.local_hospital_rounded,
+                            color: Color(0xFF0D631B), size: 36),
+                      ),
+                    )
+                  : const Center(
+                      child: Icon(Icons.local_hospital_rounded,
+                          color: Color(0xFF0D631B), size: 36),
+                    ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -688,14 +737,18 @@ class _RecommendedCard extends StatelessWidget {
                         const Icon(Icons.verified_rounded,
                             size: 13, color: Color(0xFF0D631B)),
                         const SizedBox(width: 3),
-                        Text(
-                          place.openingHours!.trim() == '24 Jam'
-                              ? 'Buka 24 Jam'
-                              : place.openingHours!.split('\n').first,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF0D631B),
-                            fontWeight: FontWeight.w500,
+                        Expanded(
+                          child: Text(
+                            place.openingHours!.trim() == '24 Jam'
+                                ? 'Buka 24 Jam'
+                                : place.openingHours!.split('\n').first,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF0D631B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

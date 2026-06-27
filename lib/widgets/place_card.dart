@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/place.dart';
-import '../models/favorites_notifier.dart';
 import '../utils/app_theme.dart';
 
-class PlaceCard extends StatefulWidget {
+class PlaceCard extends StatelessWidget {
   final Place place;
   final VoidCallback onTap;
   final double? distance;
@@ -16,38 +15,6 @@ class PlaceCard extends StatefulWidget {
     this.distance,
     this.compact = false,
   });
-
-  @override
-  State<PlaceCard> createState() => _PlaceCardState();
-}
-
-class _PlaceCardState extends State<PlaceCard> {
-  @override
-  void initState() {
-    super.initState();
-    favoritesNotifier.addListener(_rebuild);
-  }
-
-  @override
-  void dispose() {
-    favoritesNotifier.removeListener(_rebuild);
-    super.dispose();
-  }
-
-  void _rebuild() => setState(() {});
-
-  IconData _categoryIcon(String? name) {
-    switch (name?.toLowerCase()) {
-      case 'rumah sakit':
-        return Icons.local_hospital;
-      case 'klinik':
-        return Icons.medical_services;
-      case 'puskesmas':
-        return Icons.health_and_safety;
-      default:
-        return Icons.place;
-    }
-  }
 
   Color _categoryColor(String? name) {
     switch (name?.toLowerCase()) {
@@ -62,10 +29,33 @@ class _PlaceCardState extends State<PlaceCard> {
     }
   }
 
+  Widget _iconPlaceholder(Color catColor) {
+    return Container(
+      decoration: BoxDecoration(
+        color: catColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Icon(_categoryIcon(place.categoryName),
+          color: catColor, size: 26),
+    );
+  }
+
+  IconData _categoryIcon(String? name) {
+    switch (name?.toLowerCase()) {
+      case 'rumah sakit':
+        return Icons.local_hospital;
+      case 'klinik':
+        return Icons.medical_services;
+      case 'puskesmas':
+        return Icons.health_and_safety;
+      default:
+        return Icons.place;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isFav = favoritesNotifier.isFavorite(widget.place.id);
-    final catColor = _categoryColor(widget.place.categoryName);
+    final catColor = _categoryColor(place.categoryName);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -76,21 +66,27 @@ class _PlaceCardState extends State<PlaceCard> {
         side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: InkWell(
-        onTap: widget.onTap,
+        onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: catColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: SizedBox(
+                  width: 52,
+                  height: 52,
+                  child: place.effectiveFotoUrl != null
+                      ? Image.network(
+                          place.effectiveFotoUrl!,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (_, child, progress) =>
+                              progress == null ? child : _iconPlaceholder(catColor),
+                          errorBuilder: (_, _, _) => _iconPlaceholder(catColor),
+                        )
+                      : _iconPlaceholder(catColor),
                 ),
-                child: Icon(_categoryIcon(widget.place.categoryName),
-                    color: catColor, size: 26),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -98,17 +94,17 @@ class _PlaceCardState extends State<PlaceCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.place.name,
+                      place.name,
                       style: AppTextStyles.labelLarge.copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: AppColors.onSurface,
                       ),
                     ),
-                    if (widget.place.address != null) ...[
+                    if (place.address != null) ...[
                       const SizedBox(height: 3),
                       Text(
-                        widget.place.address!,
+                        place.address!,
                         style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.onSurfaceVariant),
                         maxLines: 1,
@@ -118,40 +114,40 @@ class _PlaceCardState extends State<PlaceCard> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        if (widget.distance != null) ...[
+                        if (distance != null) ...[
                           const Icon(Icons.near_me,
                               size: 14, color: AppColors.primary),
                           const SizedBox(width: 3),
                           Text(
-                            widget.distance! < 1
-                                ? '${(widget.distance! * 1000).toStringAsFixed(0)} m'
-                                : '${widget.distance!.toStringAsFixed(1)} km',
+                            distance! < 1
+                                ? '${(distance! * 1000).toStringAsFixed(0)} m'
+                                : '${distance!.toStringAsFixed(1)} km',
                             style: AppTextStyles.labelMedium.copyWith(
                                 color: AppColors.primary),
                           ),
                           const SizedBox(width: 10),
                         ],
-                        if (widget.place.rating != null) ...[
+                        if (place.rating != null) ...[
                           const Icon(Icons.star_rounded,
                               size: 14, color: Colors.amber),
                           const SizedBox(width: 3),
                           Text(
-                            widget.place.rating!.toStringAsFixed(1),
+                            place.rating!.toStringAsFixed(1),
                             style: AppTextStyles.labelMedium.copyWith(
                                 color: AppColors.onSurfaceVariant),
                           ),
                         ],
-                        if (widget.place.openingHours != null) ...[
-                          if (widget.place.rating != null)
+                        if (place.openingHours != null) ...[
+                          if (place.rating != null)
                             const SizedBox(width: 10),
                           const Icon(Icons.access_time_rounded,
                               size: 14, color: AppColors.outline),
                           const SizedBox(width: 3),
                           Expanded(
                             child: Text(
-                              widget.place.openingHours!.trim() == '24 Jam'
+                              place.openingHours!.trim() == '24 Jam'
                                   ? 'Buka 24 Jam'
-                                  : widget.place.openingHours!
+                                  : place.openingHours!
                                       .split('\n')
                                       .first,
                               style: AppTextStyles.labelMedium
@@ -165,33 +161,14 @@ class _PlaceCardState extends State<PlaceCard> {
                   ],
                 ),
               ),
-              Column(
-                children: [
-                  GestureDetector(
-                    onTap: () => favoritesNotifier.toggleFavorite(widget.place),
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 250),
-                      transitionBuilder: (child, anim) =>
-                          ScaleTransition(scale: anim, child: child),
-                      child: Icon(
-                        isFav ? Icons.favorite : Icons.favorite_outline,
-                        key: ValueKey(isFav),
-                        color: isFav ? AppColors.error : AppColors.outline,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.chevron_right,
-                        color: AppColors.primary, size: 18),
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.chevron_right,
+                    color: AppColors.primary, size: 18),
               ),
             ],
           ),
