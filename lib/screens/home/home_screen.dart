@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../models/category.dart';
 import '../../models/place.dart';
 import '../../services/api_service.dart';
-import '../detail/detail_screen.dart';
+import '../../utils/app_theme.dart';
+import '../../utils/distance.dart';
+import '../../widgets/facility_card.dart';
+import '../../widgets/place_card.dart';
+import '../../widgets/shimmer_loading.dart';
 import '../list/list_screen.dart';
+import '../detail/detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,809 +20,413 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ApiService _api = ApiService();
-  late Future<List<Category>> _categories;
-  late Future<List<Place>> _allPlaces;
-  final TextEditingController _searchCtrl = TextEditingController();
+  late Future<List<Category>> _categoriesFuture;
+  late Future<List<Place>> _allPlacesFuture;
+  Position? _position;
+  final _searchController = TextEditingController();
   String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _categories = _api.getCategories();
-    _allPlaces = _api.getPlaces();
+    _categoriesFuture = _api.getCategories();
+    _allPlacesFuture = _api.getPlaces();
+    _getLocation();
   }
 
   @override
   void dispose() {
-    _searchCtrl.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
-  IconData _iconForCategory(String name) {
+  Future<void> _getLocation() async {
+    try {
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.deniedForever) return;
+      final pos = await Geolocator.getCurrentPosition();
+      if (mounted) setState(() => _position = pos);
+    } catch (_) {}
+  }
+
+  double? _distanceTo(Place p) {
+    if (_position == null || p.latitude == null || p.longitude == null) {
+      return null;
+    }
+    return haversine(_position!.latitude, _position!.longitude,
+        p.latitude!, p.longitude!);
+  }
+
+  IconData _iconFor(String name) {
     switch (name.toLowerCase()) {
       case 'rumah sakit':
-        return Icons.local_hospital_rounded;
+        return Icons.local_hospital;
       case 'klinik':
-        return Icons.medical_services_rounded;
+        return Icons.medical_services;
       case 'puskesmas':
-        return Icons.health_and_safety_rounded;
+        return Icons.health_and_safety;
       default:
-        return Icons.place_rounded;
+        return Icons.place;
     }
   }
 
-  Color _bgForCategory(String name) {
+  Color _colorFor(String name) {
     switch (name.toLowerCase()) {
       case 'rumah sakit':
         return const Color(0xFF2E7D32);
       case 'klinik':
-        return const Color(0xFFBDEFBE);
+        return const Color(0xFF3C6842);
       case 'puskesmas':
-        return const Color(0xFFD9E6DA);
+        return const Color(0xFF4D5950);
       default:
-        return const Color(0xFFBDEFBE);
+        return AppColors.secondary;
     }
   }
 
-  Color _fgForCategory(String name) {
-    switch (name.toLowerCase()) {
-      case 'rumah sakit':
-        return const Color(0xFFCBFFC2);
-      case 'klinik':
-        return const Color(0xFF426E47);
-      case 'puskesmas':
-        return const Color(0xFF3E4A41);
-      default:
-        return const Color(0xFF426E47);
-    }
+  void _pushDetail(Place p) {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => DetailScreen(place: p)));
   }
 
-  void _openList(Category cat) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ListScreen(category: cat),
-      ),
-    );
-  }
-
-  void _openDetail(Place place) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, anim, _) => DetailScreen(place: place),
-        transitionsBuilder: (_, anim, _, child) => SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0.3, 0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-          child: child,
-        ),
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    );
+  void _pushList(Category cat) {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => ListScreen(category: cat)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F1),
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // Top App Bar
-            SliverAppBar(
-              floating: true,
-              snap: true,
-              backgroundColor: const Color(0xFFFBF9F1).withValues(alpha: 0.95),
-              elevation: 0,
-              scrolledUnderElevation: 1,
-              title: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFBDEFBE),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.local_hospital_rounded,
-                      color: Color(0xFF0D631B),
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Healthy UNAIR',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0D631B),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
+      backgroundColor: AppColors.surface,
+      body: CustomScrollView(
+        slivers: [
+          // ── App Bar ──────────────────────────────────────────
+          SliverAppBar(
+            floating: true,
+            snap: true,
+            backgroundColor: AppColors.surface,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 1,
+            shadowColor: AppColors.outlineVariant.withValues(alpha: 0.5),
+            toolbarHeight: 64,
+            title: Row(
+              children: [
                 Container(
-                  margin: const EdgeInsets.only(right: 16),
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEAE8E0),
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    color: AppColors.secondaryContainer,
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFBFCABA)),
                   ),
-                  child: const Icon(
-                    Icons.person_rounded,
-                    color: Color(0xFF40493D),
-                    size: 22,
+                  child: const Icon(Icons.local_hospital,
+                      color: AppColors.primary, size: 20),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Healthy UNAIR',
+                  style: AppTextStyles.titleLarge.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
             ),
-
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Greeting
-                    const Text(
-                      'Halo, Mahasiswa!',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1B1C17),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Temukan fasilitas kesehatan terdekat hari ini.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF40493D),
-                        letterSpacing: 0.25,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Search Bar
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F4EB),
-                        borderRadius: BorderRadius.circular(999),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: _searchCtrl,
-                        onChanged: (v) => setState(() => _searchQuery = v),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF1B1C17),
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Cari fasilitas, dokter...',
-                          hintStyle: const TextStyle(
-                            color: Color(0xFF40493D),
-                            fontSize: 15,
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.search_rounded,
-                            color: Color(0xFF40493D),
-                          ),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.close_rounded,
-                                      color: Color(0xFF40493D), size: 20),
-                                  onPressed: () {
-                                    _searchCtrl.clear();
-                                    setState(() => _searchQuery = '');
-                                  },
-                                )
-                              : null,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Categories
-                    FutureBuilder<List<Category>>(
-                      future: _categories,
-                      builder: (ctx, snap) {
-                        if (snap.connectionState == ConnectionState.waiting) {
-                          return _CategorySkeletonRow();
-                        }
-                        if (snap.hasError || snap.data == null) {
-                          return const SizedBox.shrink();
-                        }
-                        final cats = snap.data!;
-                        return Row(
-                          children: cats.map((cat) {
-                            final bg = _bgForCategory(cat.name);
-                            final fg = _fgForCategory(cat.name);
-                            return Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: _CategoryChip(
-                                  label: cat.name,
-                                  icon: _iconForCategory(cat.name),
-                                  bg: bg,
-                                  fg: fg,
-                                  onTap: () => _openList(cat),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Nearby Facilities header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Fasilitas Terdekat',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1B1C17),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ListScreen(showAll: true),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            'Lihat Semua',
-                            style: TextStyle(
-                              color: Color(0xFF0D631B),
-                              fontWeight: FontWeight.w500,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+            actions: const [
+              Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: AppColors.surfaceContainerHigh,
+                  child: Icon(Icons.person,
+                      color: AppColors.onSurfaceVariant, size: 20),
                 ),
               ),
-            ),
+            ],
+          ),
 
-            // Horizontal Nearby Facilities
-            SliverToBoxAdapter(
-              child: FutureBuilder<List<Place>>(
-                future: _allPlaces,
-                builder: (ctx, snap) {
-                  if (snap.connectionState == ConnectionState.waiting) {
-                    return SizedBox(
-                      height: 240,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: 3,
-                        separatorBuilder: (_, _) => const SizedBox(width: 12),
-                        itemBuilder: (_, _) => _FacilityCardSkeleton(),
-                      ),
-                    );
-                  }
-                  if (snap.hasError || snap.data == null || snap.data!.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('Tidak ada fasilitas ditemukan'),
-                    );
-                  }
-                  final places = snap.data!;
-                  final filtered = _searchQuery.isEmpty
-                      ? places
-                      : places
-                          .where((p) => p.name
-                              .toLowerCase()
-                              .contains(_searchQuery.toLowerCase()))
-                          .toList();
-
-                  return SizedBox(
-                    height: 240,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 12),
-                      itemBuilder: (_, i) => _FacilityCard(
-                        place: filtered[i],
-                        onTap: () => _openDetail(filtered[i]),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // Recommended Section
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Rekomendasi untuk Anda',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1B1C17),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                ),
-              ),
-            ),
-
-            FutureBuilder<List<Place>>(
-              future: _allPlaces,
-              builder: (ctx, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (_, i) => const _RecommendedSkeleton(),
-                      childCount: 3,
-                    ),
-                  );
-                }
-                if (snap.hasError || snap.data == null || snap.data!.isEmpty) {
-                  return const SliverToBoxAdapter(child: SizedBox.shrink());
-                }
-                final places = snap.data!;
-                return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (_, i) => Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: _RecommendedCard(
-                        place: places[i],
-                        onTap: () => _openDetail(places[i]),
-                      ),
-                    ),
-                    childCount: places.length.clamp(0, 5),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Greeting ─────────────────────────────────
+                  Text('Halo, Mahasiswa! 👋',
+                      style: AppTextStyles.headlineMediumMobile
+                          .copyWith(color: AppColors.onSurface)),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Temukan fasilitas kesehatan terdekat.',
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(color: AppColors.onSurfaceVariant),
                   ),
-                );
-              },
-            ),
+                  const SizedBox(height: 20),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Category chip ──────────────────────────────────────────────────────────────
-
-class _CategoryChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color bg;
-  final Color fg;
-  final VoidCallback onTap;
-
-  const _CategoryChip({
-    required this.label,
-    required this.icon,
-    required this.bg,
-    required this.fg,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: fg, size: 28),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: fg,
-                letterSpacing: 0.1,
+                  // ── Search Bar ───────────────────────────────
+                  SearchBar(
+                    controller: _searchController,
+                    hintText: 'Cari fasilitas, dokter...',
+                    leading: const Icon(Icons.search,
+                        color: AppColors.onSurfaceVariant),
+                    backgroundColor:
+                        WidgetStateProperty.all(AppColors.surfaceContainerLow),
+                    shadowColor: WidgetStateProperty.all(Colors.transparent),
+                    shape: WidgetStateProperty.all(RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28))),
+                    padding: WidgetStateProperty.all(
+                        const EdgeInsets.symmetric(horizontal: 16)),
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Facility card (horizontal) ─────────────────────────────────────────────────
-
-class _FacilityCard extends StatelessWidget {
-  final Place place;
-  final VoidCallback onTap;
-
-  const _FacilityCard({required this.place, required this.onTap});
-
-  Widget _buildIconFallback() {
-    return Center(
-      child: Icon(
-        Icons.local_hospital_rounded,
-        size: 56,
-        color: const Color(0xFF0D631B).withValues(alpha: 0.3),
-      ),
-    );
-  }
-
-  Widget _buildRatingBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.star_rounded,
-              color: Color(0xFFF59E0B), size: 14),
-          const SizedBox(width: 2),
-          Text(
-            place.rating!.toStringAsFixed(1),
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1B1C17),
             ),
           ),
+
+          // ── If searching ────────────────────────────────────
+          if (_searchQuery.isNotEmpty)
+            _buildSearchResults()
+          else ...[
+            // ── Categories ───────────────────────────────────
+            _buildSectionHeader('Kategori'),
+            _buildCategories(),
+
+            // ── Nearby ──────────────────────────────────────
+            _buildSectionHeader('Fasilitas Terdekat'),
+            _buildNearbyHorizontal(),
+
+            // ── Recommended ─────────────────────────────────
+            _buildSectionHeader('Rekomendasi untuk Kamu'),
+            _buildRecommended(),
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+          ],
         ],
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 240,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image placeholder
-            Container(
-              height: 140,
-              decoration: BoxDecoration(
-                color: const Color(0xFFBDEFBE),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20),
-                ),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: place.effectiveFotoUrl != null
-                  ? Stack(
-                      children: [
-                        Image.network(
-                          place.effectiveFotoUrl!,
-                          width: double.infinity,
-                          height: 140,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => _buildIconFallback(),
-                        ),
-                        if (place.rating != null)
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: _buildRatingBadge(),
-                          ),
-                      ],
-                    )
-                  : Stack(
-                      children: [
-                        Center(
-                          child: Icon(
-                            Icons.local_hospital_rounded,
-                            size: 56,
-                            color: const Color(0xFF0D631B).withValues(alpha: 0.3),
-                          ),
-                        ),
-                        if (place.rating != null)
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: _buildRatingBadge(),
-                          ),
-                      ],
-                    ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    place.name,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1B1C17),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on_rounded,
-                          size: 13, color: Color(0xFF40493D)),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: Text(
-                          place.address ?? '',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF40493D),
-                            letterSpacing: 0.5,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+  Widget _buildSectionHeader(String title) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+        child: Text(title,
+            style: AppTextStyles.titleLarge
+                .copyWith(color: AppColors.onSurface, fontSize: 18)),
       ),
     );
   }
-}
 
-// ── Recommended card ───────────────────────────────────────────────────────────
-
-class _RecommendedCard extends StatelessWidget {
-  final Place place;
-  final VoidCallback onTap;
-
-  const _RecommendedCard({required this.place, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFFBDEFBE),
-                borderRadius: BorderRadius.circular(14),
+  Widget _buildCategories() {
+    return SliverToBoxAdapter(
+      child: FutureBuilder<List<Category>>(
+        future: _categoriesFuture,
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return SizedBox(
+              height: 90,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: 3,
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                itemBuilder: (_, _) =>
+                    const ShimmerLoading(width: 90, height: 90, borderRadius: 20),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: place.effectiveFotoUrl != null
-                  ? Image.network(
-                      place.effectiveFotoUrl!,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => const Center(
-                        child: Icon(Icons.local_hospital_rounded,
-                            color: Color(0xFF0D631B), size: 36),
-                      ),
-                    )
-                  : const Center(
-                      child: Icon(Icons.local_hospital_rounded,
-                          color: Color(0xFF0D631B), size: 36),
+            );
+          }
+          final cats = snap.data ?? [];
+          return SizedBox(
+            height: 90,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: cats.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, i) {
+                final cat = cats[i];
+                final color = _colorFor(cat.name);
+                return GestureDetector(
+                  onTap: () => _pushList(cat),
+                  child: Container(
+                    width: 90,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: color.withValues(alpha: 0.25)),
                     ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    place.name,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1B1C17),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (place.address != null) ...[
-                    const SizedBox(height: 3),
-                    Row(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.location_on_rounded,
-                            size: 13, color: Color(0xFF40493D)),
-                        const SizedBox(width: 2),
-                        Expanded(
-                          child: Text(
-                            place.address!,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF40493D),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  if (place.rating != null) ...[
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded,
-                            size: 14, color: Color(0xFFF59E0B)),
-                        const SizedBox(width: 3),
+                        Icon(_iconFor(cat.name), color: color, size: 30),
+                        const SizedBox(height: 6),
                         Text(
-                          place.rating!.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1B1C17),
-                          ),
+                          cat.name.split(' ').first,
+                          style: AppTextStyles.labelMedium
+                              .copyWith(color: color, fontWeight: FontWeight.w600),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
-                  ],
-                  if (place.openingHours != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.verified_rounded,
-                            size: 13, color: Color(0xFF0D631B)),
-                        const SizedBox(width: 3),
-                        Expanded(
-                          child: Text(
-                            place.openingHours!.trim() == '24 Jam'
-                                ? 'Buka 24 Jam'
-                                : place.openingHours!.split('\n').first,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF0D631B),
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
+                  ),
+                );
+              },
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: Color(0xFF0D631B), size: 22),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
-}
 
-// ── Skeletons ──────────────────────────────────────────────────────────────────
-
-class _CategorySkeletonRow extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: List.generate(3, (i) {
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Container(
-              height: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE4E3DA),
-                borderRadius: BorderRadius.circular(20),
+  Widget _buildNearbyHorizontal() {
+    return SliverToBoxAdapter(
+      child: FutureBuilder<List<Place>>(
+        future: _allPlacesFuture,
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return SizedBox(
+              height: 185,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: 3,
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                itemBuilder: (_, _) =>
+                    const ShimmerLoading(width: 220, height: 185, borderRadius: 20),
+              ),
+            );
+          }
+          final places = snap.data ?? [];
+          List<Place> sorted = [...places];
+          if (_position != null) {
+            sorted.sort((a, b) {
+              final da = _distanceTo(a) ?? 999;
+              final db = _distanceTo(b) ?? 999;
+              return da.compareTo(db);
+            });
+          }
+          final nearby = sorted.take(5).toList();
+          return SizedBox(
+            height: 185,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: nearby.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, i) => FacilityCard(
+                place: nearby[i],
+                distance: _distanceTo(nearby[i]),
+                onTap: () => _pushDetail(nearby[i]),
               ),
             ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildRecommended() {
+    return FutureBuilder<List<Place>>(
+      future: _allPlacesFuture,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (_, _) => const ShimmerLoading(
+                height: 88,
+                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                borderRadius: 20,
+              ),
+              childCount: 3,
+            ),
+          );
+        }
+        final places = (snap.data ?? [])
+            .where((p) => p.rating != null && p.rating! >= 4.0)
+            .take(5)
+            .toList();
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, i) => TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: Duration(milliseconds: 300 + i * 80),
+              curve: Curves.easeOut,
+              builder: (ctx, v, child) => Opacity(
+                opacity: v,
+                child: Transform.translate(
+                    offset: Offset(0, 20 * (1 - v)), child: child),
+              ),
+              child: PlaceCard(
+                place: places[i],
+                distance: _distanceTo(places[i]),
+                onTap: () => _pushDetail(places[i]),
+              ),
+            ),
+            childCount: places.length,
           ),
         );
-      }),
+      },
     );
   }
-}
 
-class _FacilityCardSkeleton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 240,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE4E3DA),
-        borderRadius: BorderRadius.circular(20),
-      ),
-    );
-  }
-}
+  Widget _buildSearchResults() {
+    return FutureBuilder<List<Place>>(
+      future: _allPlacesFuture,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (_, _) => const ShimmerLoading(
+                height: 88,
+                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                borderRadius: 20,
+              ),
+              childCount: 4,
+            ),
+          );
+        }
+        final q = _searchQuery.toLowerCase();
+        final results = (snap.data ?? []).where((p) {
+          return p.name.toLowerCase().contains(q) ||
+              (p.address?.toLowerCase().contains(q) ?? false) ||
+              (p.categoryName?.toLowerCase().contains(q) ?? false);
+        }).toList();
 
-class _RecommendedSkeleton extends StatelessWidget {
-  const _RecommendedSkeleton();
+        if (results.isEmpty) {
+          return SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(48),
+              child: Column(
+                children: [
+                  Icon(Icons.search_off,
+                      size: 56, color: AppColors.outline.withValues(alpha: 0.5)),
+                  const SizedBox(height: 16),
+                  Text('Tidak ditemukan',
+                      style: AppTextStyles.titleLarge
+                          .copyWith(color: AppColors.onSurfaceVariant)),
+                  const SizedBox(height: 6),
+                  Text('Coba kata kunci lain',
+                      style: AppTextStyles.bodyMedium
+                          .copyWith(color: AppColors.outline)),
+                ],
+              ),
+            ),
+          );
+        }
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Container(
-        height: 96,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE4E3DA),
-          borderRadius: BorderRadius.circular(20),
-        ),
-      ),
+        return SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, i) => PlaceCard(
+              place: results[i],
+              distance: _distanceTo(results[i]),
+              onTap: () => _pushDetail(results[i]),
+            ),
+            childCount: results.length,
+          ),
+        );
+      },
     );
   }
 }

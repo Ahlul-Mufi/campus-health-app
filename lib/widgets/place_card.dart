@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/place.dart';
+import '../models/favorites_notifier.dart';
 import '../utils/app_theme.dart';
 
-class PlaceCard extends StatelessWidget {
+class PlaceCard extends StatefulWidget {
   final Place place;
   final VoidCallback onTap;
   final double? distance;
@@ -16,29 +17,24 @@ class PlaceCard extends StatelessWidget {
     this.compact = false,
   });
 
-  Color _categoryColor(String? name) {
-    switch (name?.toLowerCase()) {
-      case 'rumah sakit':
-        return const Color(0xFF2E7D32);
-      case 'klinik':
-        return const Color(0xFF3C6842);
-      case 'puskesmas':
-        return const Color(0xFF4D5950);
-      default:
-        return AppColors.secondary;
-    }
+  @override
+  State<PlaceCard> createState() => _PlaceCardState();
+}
+
+class _PlaceCardState extends State<PlaceCard> {
+  @override
+  void initState() {
+    super.initState();
+    favoritesNotifier.addListener(_rebuild);
   }
 
-  Widget _iconPlaceholder(Color catColor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: catColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Icon(_categoryIcon(place.categoryName),
-          color: catColor, size: 26),
-    );
+  @override
+  void dispose() {
+    favoritesNotifier.removeListener(_rebuild);
+    super.dispose();
   }
+
+  void _rebuild() => setState(() {});
 
   IconData _categoryIcon(String? name) {
     switch (name?.toLowerCase()) {
@@ -53,9 +49,23 @@ class PlaceCard extends StatelessWidget {
     }
   }
 
+  Color _categoryColor(String? name) {
+    switch (name?.toLowerCase()) {
+      case 'rumah sakit':
+        return const Color(0xFF2E7D32);
+      case 'klinik':
+        return const Color(0xFF3C6842);
+      case 'puskesmas':
+        return const Color(0xFF4D5950);
+      default:
+        return AppColors.secondary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final catColor = _categoryColor(place.categoryName);
+    final isFav = favoritesNotifier.isFavorite(widget.place.id);
+    final catColor = _categoryColor(widget.place.categoryName);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -66,27 +76,21 @@ class PlaceCard extends StatelessWidget {
         side: BorderSide(color: AppColors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: SizedBox(
-                  width: 52,
-                  height: 52,
-                  child: place.effectiveFotoUrl != null
-                      ? Image.network(
-                          place.effectiveFotoUrl!,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (_, child, progress) =>
-                              progress == null ? child : _iconPlaceholder(catColor),
-                          errorBuilder: (_, _, _) => _iconPlaceholder(catColor),
-                        )
-                      : _iconPlaceholder(catColor),
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: catColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
+                child: Icon(_categoryIcon(widget.place.categoryName),
+                    color: catColor, size: 26),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -94,17 +98,17 @@ class PlaceCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      place.name,
+                      widget.place.name,
                       style: AppTextStyles.labelLarge.copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: AppColors.onSurface,
                       ),
                     ),
-                    if (place.address != null) ...[
+                    if (widget.place.address != null) ...[
                       const SizedBox(height: 3),
                       Text(
-                        place.address!,
+                        widget.place.address!,
                         style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.onSurfaceVariant),
                         maxLines: 1,
@@ -114,40 +118,40 @@ class PlaceCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        if (distance != null) ...[
+                        if (widget.distance != null) ...[
                           const Icon(Icons.near_me,
                               size: 14, color: AppColors.primary),
                           const SizedBox(width: 3),
                           Text(
-                            distance! < 1
-                                ? '${(distance! * 1000).toStringAsFixed(0)} m'
-                                : '${distance!.toStringAsFixed(1)} km',
+                            widget.distance! < 1
+                                ? '${(widget.distance! * 1000).toStringAsFixed(0)} m'
+                                : '${widget.distance!.toStringAsFixed(1)} km',
                             style: AppTextStyles.labelMedium.copyWith(
                                 color: AppColors.primary),
                           ),
                           const SizedBox(width: 10),
                         ],
-                        if (place.rating != null) ...[
+                        if (widget.place.rating != null) ...[
                           const Icon(Icons.star_rounded,
                               size: 14, color: Colors.amber),
                           const SizedBox(width: 3),
                           Text(
-                            place.rating!.toStringAsFixed(1),
+                            widget.place.rating!.toStringAsFixed(1),
                             style: AppTextStyles.labelMedium.copyWith(
                                 color: AppColors.onSurfaceVariant),
                           ),
                         ],
-                        if (place.openingHours != null) ...[
-                          if (place.rating != null)
+                        if (widget.place.openingHours != null) ...[
+                          if (widget.place.rating != null)
                             const SizedBox(width: 10),
                           const Icon(Icons.access_time_rounded,
                               size: 14, color: AppColors.outline),
                           const SizedBox(width: 3),
                           Expanded(
                             child: Text(
-                              place.openingHours!.trim() == '24 Jam'
+                              widget.place.openingHours!.trim() == '24 Jam'
                                   ? 'Buka 24 Jam'
-                                  : place.openingHours!
+                                  : widget.place.openingHours!
                                       .split('\n')
                                       .first,
                               style: AppTextStyles.labelMedium
@@ -161,14 +165,33 @@ class PlaceCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.chevron_right,
-                    color: AppColors.primary, size: 18),
+              Column(
+                children: [
+                  GestureDetector(
+                    onTap: () => favoritesNotifier.toggleFavorite(widget.place),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      transitionBuilder: (child, anim) =>
+                          ScaleTransition(scale: anim, child: child),
+                      child: Icon(
+                        isFav ? Icons.favorite : Icons.favorite_outline,
+                        key: ValueKey(isFav),
+                        color: isFav ? AppColors.error : AppColors.outline,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.chevron_right,
+                        color: AppColors.primary, size: 18),
+                  ),
+                ],
               ),
             ],
           ),

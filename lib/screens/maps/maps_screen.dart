@@ -142,7 +142,7 @@ class _MapsScreenState extends State<MapsScreen> {
               border: Border.all(color: Colors.white, width: 3),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0D631B).withValues(alpha: 0.4),
+                  color: const Color(0xFF0D631B).withOpacity(0.4),
                   blurRadius: 8,
                   spreadRadius: 2,
                 ),
@@ -176,7 +176,7 @@ class _MapsScreenState extends State<MapsScreen> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
+                              color: Colors.black.withOpacity(0.15),
                               blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
@@ -196,11 +196,11 @@ class _MapsScreenState extends State<MapsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.95),
+                            color: Colors.white.withOpacity(0.95),
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
+                                color: Colors.black.withOpacity(0.1),
                                 blurRadius: 4,
                               ),
                             ],
@@ -233,7 +233,7 @@ class _MapsScreenState extends State<MapsScreen> {
               initialZoom: 14,
               minZoom: 3,
               maxZoom: 19,
-              onTap: (_, _) => setState(() => _selected = null),
+              onTap: (_, __) => setState(() => _selected = null),
             ),
             children: [
               TileLayer(
@@ -260,11 +260,11 @@ class _MapsScreenState extends State<MapsScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: Colors.white.withOpacity(0.95),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
+                          color: Colors.black.withOpacity(0.08),
                           blurRadius: 12,
                           offset: const Offset(0, 2),
                         ),
@@ -307,7 +307,7 @@ class _MapsScreenState extends State<MapsScreen> {
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: _filters.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
                       itemBuilder: (_, i) {
                         final f = _filters[i];
                         final active = f == _activeFilter;
@@ -320,7 +320,7 @@ class _MapsScreenState extends State<MapsScreen> {
                             decoration: BoxDecoration(
                               color: active
                                   ? const Color(0xFF0D631B)
-                                  : Colors.white.withValues(alpha: 0.9),
+                                  : Colors.white.withOpacity(0.9),
                               borderRadius: BorderRadius.circular(999),
                               border: Border.all(
                                 color: active
@@ -329,7 +329,7 @@ class _MapsScreenState extends State<MapsScreen> {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.06),
+                                  color: Colors.black.withOpacity(0.06),
                                   blurRadius: 4,
                                 ),
                               ],
@@ -437,7 +437,7 @@ class _MapFab extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
+              color: Colors.black.withOpacity(0.12),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -467,11 +467,11 @@ class _SelectedPlaceSheet extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.97),
+        color: Colors.white.withOpacity(0.97),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
+            color: Colors.black.withOpacity(0.15),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
