@@ -89,8 +89,20 @@ class _PlaceCardState extends State<PlaceCard> {
                   color: catColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(_categoryIcon(widget.place.categoryName),
-                    color: catColor, size: 26),
+                clipBehavior: Clip.antiAlias,
+                child: widget.place.effectiveFotoUrl != null
+                    ? Image.network(
+                        widget.place.effectiveFotoUrl!,
+                        width: 52,
+                        height: 52,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Icon(
+                            _categoryIcon(widget.place.categoryName),
+                            color: catColor,
+                            size: 26),
+                      )
+                    : Icon(_categoryIcon(widget.place.categoryName),
+                        color: catColor, size: 26),
               ),
               const SizedBox(width: 14),
               Expanded(

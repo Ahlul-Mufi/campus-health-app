@@ -57,7 +57,7 @@ class _FacilityCardState extends State<FacilityCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image placeholder / header
+            // Image header with photo
             Container(
               height: 110,
               decoration: BoxDecoration(
@@ -65,15 +65,31 @@ class _FacilityCardState extends State<FacilityCard> {
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(20)),
               ),
+              clipBehavior: Clip.antiAlias,
               child: Stack(
                 children: [
-                  Center(
-                    child: Icon(
-                      _iconFor(widget.place.categoryName),
-                      size: 48,
-                      color: AppColors.primary.withValues(alpha: 0.35),
+                  if (widget.place.effectiveFotoUrl != null)
+                    Image.network(
+                      widget.place.effectiveFotoUrl!,
+                      width: double.infinity,
+                      height: 110,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Center(
+                        child: Icon(
+                          _iconFor(widget.place.categoryName),
+                          size: 48,
+                          color: AppColors.primary.withValues(alpha: 0.35),
+                        ),
+                      ),
+                    )
+                  else
+                    Center(
+                      child: Icon(
+                        _iconFor(widget.place.categoryName),
+                        size: 48,
+                        color: AppColors.primary.withValues(alpha: 0.35),
+                      ),
                     ),
-                  ),
                   // Rating badge
                   if (widget.place.rating != null)
                     Positioned(
